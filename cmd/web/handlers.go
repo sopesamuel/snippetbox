@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
-	"unicode/utf8"
 	"snippetbox.project.sope/internal/models"
+	"snippetbox.project.sope/internal/validator"
 )
 
 type snippetcreateForm struct {
 	Title string
 	Content string
 	Expires int
-	FieldErrors map[string]string
+	validator.Validator
 }
 
 
@@ -83,24 +82,15 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		Title: r.PostForm.Get("title"),
 		Content: r.PostForm.Get("content"),
 		Expires: expires,
-		FieldErrors: map[string]string{},
 	}
+	
 
-	if strings.TrimSpace(form.Title) == ""{
-		form.FieldErrors["Title"] = "Field cannot be empty!"
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["Title"] = "Value characters cannot exceed 100!"
-	}
+	form.CheckField(validator.NotBlank(form.Title), "Title", "Field cannot be empty!")
+	form.CheckField(validator.MaxChar(form.Title, 100), "Title", "Value characters cannot exceed 100!")
+	form.CheckField(validator.NotBlank(form.Content), "Content", "Field cannot be empty!")
+	form.CheckField(validator.PermittedValue(form.Expires, 1,7, 365), "Expires", "Invalid value, expiry date value has to be 1, 7 or 365")
 
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["Content"] = "Field cannot be empty!"
-	}
-
-	if expires != 1 && expires != 7 &&  expires != 365 {
-		form.FieldErrors["Expires"] = "Invalid value, expiry date value has to be 1, 7 or 365"
-	}
-
-	if len(form.FieldErrors) > 0 {
+	if form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
@@ -113,7 +103,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("snippet/view/%v", id), http.StatusSeeOther)
-
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%v", id), http.StatusSeeOther)
 
 }
