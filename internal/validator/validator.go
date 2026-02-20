@@ -7,23 +7,23 @@ import (
 )
 
 type Validator struct {
-	FieldError map[string]string
+	FieldErrors map[string]string
 }
 
 //Check if there are errors atall to determine display of errors at html level
 func (v *Validator) Valid() bool {
-	return len(v.FieldError) == 0
+	return len(v.FieldErrors) == 0
 }
 
 
 func (v *Validator) AddField(key string, message string) {
-	if v.FieldError == nil {
-		v.FieldError = make(map[string]string)
+	if v.FieldErrors == nil {
+		v.FieldErrors = make(map[string]string)
 	}
 
-	_, exists := v.FieldError[key]
+	_, exists := v.FieldErrors[key]
 	if !exists {
-		v.FieldError[key] = message
+		v.FieldErrors[key] = message
 	}
 }
 
@@ -33,6 +33,7 @@ func (v *Validator) CheckField(ok bool, key string, message string) {
 	}
 }
 
+//Necessary checks blank, wrong expiry value, more than 100
 func NotBlank(value string) bool {
 	return strings.TrimSpace(value) != ""
 }

@@ -74,8 +74,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
 	if err != nil {
-		app.clientError(w, r, http.StatusBadRequest)
-		return
+		expires = 0
 	}
 
 	form := snippetcreateForm{
@@ -90,7 +89,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(validator.NotBlank(form.Content), "Content", "Field cannot be empty!")
 	form.CheckField(validator.PermittedValue(form.Expires, 1,7, 365), "Expires", "Invalid value, expiry date value has to be 1, 7 or 365")
 
-	if form.Valid() {
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "create.tmpl", data)
