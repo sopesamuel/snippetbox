@@ -7,13 +7,14 @@ import (
 	"strconv"
 	"snippetbox.project.sope/internal/models"
 	"snippetbox.project.sope/internal/validator"
+	
 )
 
 type snippetcreateForm struct {
-	Title string
-	Content string
-	Expires int
-	validator.Validator
+	Title string `form:"title"`
+	Content string `form:"content"`
+	Expires int `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 
@@ -66,23 +67,13 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request){
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request){
 
-	err := r.ParseForm()
+	var form snippetcreateForm
+
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, r, http.StatusBadRequest)
 		return
 	}
-
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
-	if err != nil {
-		expires = 0
-	}
-
-	form := snippetcreateForm{
-		Title: r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
-	}
-	
 
 	form.CheckField(validator.NotBlank(form.Title), "Title", "Field cannot be empty!")
 	form.CheckField(validator.MaxChar(form.Title, 100), "Title", "Value characters cannot exceed 100!")
