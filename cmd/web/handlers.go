@@ -17,6 +17,13 @@ type snippetcreateForm struct {
 	validator.Validator `form:"-"`
 }
 
+type userSignupForm struct {
+	Name string `form:"name"`
+	Email string `form:"email"`
+	Password string `form:"password"`
+	validator.Validator `form:"-"`
+}
+
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
@@ -32,7 +39,6 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, http.StatusOK, "home.tmpl", data)
 
 }
-
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request){
 	id, err:= strconv.Atoi(r.PathValue("id"))
@@ -57,13 +63,13 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request){
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
-
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request){
 	data := app.newTemplateData(r)
 	data.Form = snippetcreateForm{}
 	app.render(w, r, http.StatusOK, "create.tmpl", data)
 
 }
+
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request){
 
@@ -97,4 +103,66 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%v", id), http.StatusSeeOther)
 
+}
+
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request){
+			data := app.newTemplateData(r)
+			data.Form = userSignupForm{}
+			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
+}
+
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
+
+	var form userSignupForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil{
+		app.clientError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Name), "Name", "Field cannot be empty!")
+	form.CheckField(validator.NotBlank(form.Email), "Email", "Field cannot be empty!")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "Email", "Invalid email format!")
+	form.CheckField(validator.NotBlank(form.Password), "Password", "Field cannot be empty!")
+	form.CheckField(validator.MinChars(form.Password, 8), "Password", "Password must be 8 characters long!")
+
+	if !form.Valid(){
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusOK, "signup.tmpl", data)
+		return
+	}
+
+	err = app.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+
+		if errors.Is(err, models.ErrDuplicateEmail){
+			form.AddField("Email", "This email is already in use!")
+
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
+			return
+		} else {
+			app.serverError(w, r, err)
+		}
+
+		return
+	}
+
+	app.sessionManager.Put(r.Context(),"flash","Your signup was successful!")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+
+
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Display a form for logging in a user...")
+}
+func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Authenticate and login the user...")
+}
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request){
+	fmt.Fprintln(w, "Logout the user...")
 }

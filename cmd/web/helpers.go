@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
 	"github.com/go-playground/form/v4"
 )
+
 
 func (app *application) newTemplateData(r *http.Request)templateData{
 	return templateData{
@@ -16,6 +16,7 @@ func (app *application) newTemplateData(r *http.Request)templateData{
 		Flash : app.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
+
 
 func (app *application) decodePostForm(r *http.Request, dst any) error {
 
@@ -78,6 +79,7 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 	//Status text receives the number and converts it to human text version i.e bad request
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
+
 
 //Error from the client or user
 func (app *application) clientError(w http.ResponseWriter, r *http.Request, status int){
