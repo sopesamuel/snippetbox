@@ -14,6 +14,7 @@ func (app *application) newTemplateData(r *http.Request)templateData{
 	return templateData{
 		CurrentYear : time.Now().Year(),
 		Flash : app.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: app.isAuthenticated(r),
 	}
 }
 
@@ -84,4 +85,8 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 //Error from the client or user
 func (app *application) clientError(w http.ResponseWriter, r *http.Request, status int){
 	http.Error(w, http.StatusText(status), status)
+}
+
+func (app *application) isAuthenticated(r *http.Request) bool{
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

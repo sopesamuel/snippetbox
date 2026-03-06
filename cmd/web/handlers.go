@@ -214,6 +214,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
 	}
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
+	app.sessionManager.Put(r.Context(), "flash", "Your login was successful!")
 
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
