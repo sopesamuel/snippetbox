@@ -12,3 +12,4 @@ func Equal[T comparable](t *testing.T, actual, expected T){
 		t.Errorf("got: %v; want: %v", actual, expected)
 	}
 }
+
