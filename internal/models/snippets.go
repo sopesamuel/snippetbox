@@ -6,6 +6,12 @@ import (
 	"errors"
 )
 
+type SnippetModelInterface interface{
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (Snippet, error)
+	Latest() ([]Snippet, error)
+}
+
 //Holds data for an individual snippet
 type Snippet struct {
 	ID int
@@ -14,6 +20,7 @@ type Snippet struct {
 	Created time.Time
 	Expires time.Time
 }
+
 
 type SnippetModel struct {
 	DB *sql.DB
