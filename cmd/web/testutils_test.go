@@ -2,20 +2,20 @@ package main
 
 import (
 	"bytes"
+	"html"
 	"io"
 	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"net/http/cookiejar"
-	"time"
-	"html"
-	"regexp"
+	"net/http/httptest"
 	"net/url"
+	"regexp"
+	"strings"
+	"time"
 
-	"snippetbox.project.sope/internal/models/mocks"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
-
+	"snippetbox.project.sope/internal/models/mocks"
 
 	"testing"
 )
@@ -29,7 +29,7 @@ func extractCSRFToken(t *testing.T, body string) string {
 		t.Fatal("no csrf token found in body")
 	}
 
-	return html.UnescapeString(matches[1])
+	return html.UnescapeString(string(matches[1]))
 }
 
 func newTestApplication(t *testing.T) *application {
@@ -44,7 +44,7 @@ func newTestApplication(t *testing.T) *application {
 	sessionManger := scs.New()
 	sessionManger.Lifetime = 12 * time.Hour
 	sessionManger.Cookie.Secure = true
-	sessionManger.Cookie.SameSite = http.SameSiteNoneMode
+	
 
 
 	return &application{
@@ -97,12 +97,19 @@ func (ts *testServer) get(t *testing.T, urlPath string)(int, http.Header,string)
 }
 
 func (ts *testServer) postForm(t *testing.T, urlPath string, form url.Values) (int, http.Header, string){
-	rs, err := ts.Client().PostForm(ts.URL + urlPath, form)
+	r, err := http.NewRequest("POST", ts.URL + urlPath, strings.NewReader(form.Encode()))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	defer rs.Body.Close()
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Referer", ts.URL)
+
+	rs, err := ts.Client().Do(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	body, err := io.ReadAll(rs.Body)
 	if err != nil {
 		t.Fatal(err)
