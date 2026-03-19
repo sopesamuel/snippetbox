@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/justinas/nosurf"
@@ -75,6 +76,11 @@ func noSurf(next http.Handler) http.Handler{
 		Path: "/",
 		Secure: true,
 	})
+
+	csrfHandler.SetFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("CSRF failure reason: %v", nosurf.Reason(r))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	}))
 
 	return csrfHandler
 }

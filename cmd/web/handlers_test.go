@@ -92,112 +92,111 @@ func TestUserSignup(t *testing.T) {
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
-	_,headers, body := ts.get(t, "/user/signup")
-	t.Logf("Body: %s", body)
+	_,_, body := ts.get(t, "/user/signup")
+	// t.Logf("Body: %s", body)
 	validCSRFToken := extractCSRFToken(t, body)
 
 
-	t.Logf("CSRF Token is : %q", validCSRFToken)
-	t.Logf("Response headers: %+v", headers)
-	t.Logf("Server URL: %q", ts.URL)
-	t.Logf("All cookies: %+v", ts.Client().Jar)
+	// t.Logf("CSRF Token is : %q", validCSRFToken)
+	// t.Logf("Server URL: %q", ts.URL)
+	// t.Logf("All cookies: %+v", ts.Client().Jar)
 
 	const (
-		validName = "Bob"
+		validName     = "Bob"
 		validPassword = "validPa$$word"
-		validEmail = "bob@example.com"
-		formTag = "<form action='/user/signup' method='POST' novalidate>"
+		validEmail    = "bob@example.com"
+		formTag       = "<form action='/user/signup' method='POST' novalidate>"
 	)
 
-	test := []struct{
-		name string
-		userName string
-		userEmail string
+	tests := []struct {
+		name         string
+		userName     string
+		userEmail    string
 		userPassword string
-		csrfToken string
-		wantCode int
-		wantFormTag string
+		csrfToken    string
+		wantCode     int
+		wantFormTag  string
 	}{
 		{
-			name: "Valid Submission",
-			userName: validName,
-			userEmail: validEmail,
+			name:         "Valid submission",
+			userName:     validName,
+			userEmail:    validEmail,
 			userPassword: validPassword,
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusSeeOther,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusSeeOther,
 		},
 		{
-			name: "Invalid CSRF Token",
-			userName: validName,
-			userEmail: validEmail,
+			name:         "Invalid CSRF Token",
+			userName:     validName,
+			userEmail:    validEmail,
 			userPassword: validPassword,
-			csrfToken: "wrongToken",
-			wantCode: http.StatusBadRequest,
+			csrfToken:    "wrongToken",
+			wantCode:     http.StatusBadRequest,
 		},
 		{
-			name: "Empty name",
-			userName: "",
-			userEmail: validEmail,
+			name:         "Empty name",
+			userName:     "",
+			userEmail:    validEmail,
 			userPassword: validPassword,
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 		{
-			name: "Empty email",
-			userName: validName,
-			userEmail: "",
+			name:         "Empty email",
+			userName:     validName,
+			userEmail:    "",
 			userPassword: validPassword,
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 		{
-			name: "Empty password",
-			userName: validName,
-			userEmail: validEmail,
+			name:         "Empty password",
+			userName:     validName,
+			userEmail:    validEmail,
 			userPassword: "",
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 		{
-			name: "Invalid email",
-			userName: validName,
-			userEmail: "bob@example",
+			name:         "Invalid email",
+			userName:     validName,
+			userEmail:    "bob@example.",
 			userPassword: validPassword,
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 		{
-			name: "Short password",
-			userName: validName,
-			userEmail: validEmail,
+			name:         "Short password",
+			userName:     validName,
+			userEmail:    validEmail,
 			userPassword: "pa$$",
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 		{
-			name: "Duplicate email",
-			userName: validName,
-			userEmail: "dupe@example.com",
+			name:         "Duplicate email",
+			userName:     validName,
+			userEmail:    "dupe@gmail.com",
 			userPassword: validPassword,
-			csrfToken: validCSRFToken,
-			wantCode: http.StatusUnprocessableEntity,
-			wantFormTag: formTag,
+			csrfToken:    validCSRFToken,
+			wantCode:     http.StatusUnprocessableEntity,
+			wantFormTag:  formTag,
 		},
 	}
 
-	for _, tt := range test {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
 			form.Add("name", tt.userName)
 			form.Add("email", tt.userEmail)
 			form.Add("password", tt.userPassword)
 			form.Add("csrf_token", tt.csrfToken)
-
+			// t.Logf("Client jar before POST: %+v", ts.Client().Jar)
 			code, _, body := ts.postForm(t, "/user/signup", form)
 
 			assert.Equal(t, code ,tt.wantCode)

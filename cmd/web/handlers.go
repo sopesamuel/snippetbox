@@ -116,7 +116,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request){
 			data := app.newTemplateData(r)
 			data.Form = userSignupForm{}
-			app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
+			app.render(w, r, http.StatusOK, "signup.tmpl", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
