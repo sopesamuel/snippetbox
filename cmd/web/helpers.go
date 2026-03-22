@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-playground/form/v4"
@@ -77,9 +78,17 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 	var (
 		method = r.Method
 		uri = r.URL.RequestURI()
+		trace = string(debug.Stack())
 	)
-
+	
 	app.logger.Error(err.Error(), "method", method, "uri", uri )
+
+	if app.debug {
+		body := fmt.Sprintf("%s\n%s", err, trace)
+		http.Error(w, body, http.StatusInternalServerError)
+		return
+	}
+
 	//Status text receives the number and converts it to human text version i.e bad request
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
