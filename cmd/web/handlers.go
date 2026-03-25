@@ -215,6 +215,16 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	path := app.sessionManager.PopString(r.Context(), "Path")
+	if path != "" {
+
+		app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
+		app.sessionManager.Put(r.Context(), "flash", "Your login was successful!")
+
+		http.Redirect(w, r, path , http.StatusSeeOther)
+		return
+	}
+	
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 	app.sessionManager.Put(r.Context(), "flash", "Your login was successful!")
 
@@ -242,7 +252,6 @@ func (app *application) about(w http.ResponseWriter, r *http.Request){
 	app.render(w, r, http.StatusUnprocessableEntity, "about.tmpl", data)
 }
 
-
 func (app *application) accountView(w http.ResponseWriter, r *http.Request){
 
 	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
@@ -263,3 +272,10 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request){
 
 }
 
+func (app *application) accountPasswordUpdate(w http.ResponseWriter, r *http.Request){
+
+}
+
+func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http.Request){
+
+}
