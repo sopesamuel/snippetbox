@@ -1,6 +1,8 @@
 package mocks
 
 import (
+	"time"
+
 	"snippetbox.project.sope/internal/models"
 )
 
@@ -30,3 +32,18 @@ func (m *UserModel) Exists(id int) (bool, error) {
 			return false, nil
 	} 
 }
+
+func (m *UserModel) Get(id int) (models.User, error){
+	if id == 5 {
+		user := models.User{
+				ID: 1,
+				Name: "samuel",
+				Email: "danielmosope@gmail.com",
+				Created: time.Now(),
+			}
+			return user, nil
+	}
+
+	return models.User{}, models.ErrNoRecord
+}
+
