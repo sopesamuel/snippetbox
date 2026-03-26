@@ -19,10 +19,10 @@ func (v *Validator) Valid() bool {
 	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
-
 func (v *Validator) AddNonField(message string) {
 	v.NonFieldErrors = append(v.NonFieldErrors, message)
 }
+
 func (v *Validator) AddField(key string, message string) {
 	if v.FieldErrors == nil {
 		v.FieldErrors = make(map[string]string)
@@ -59,4 +59,7 @@ func MinChars(value string, n int) bool{
 
 func Matches(value string, rx *regexp.Regexp) bool {
 	return rx.MatchString(value)
+}
+func MatchOthers(actual string, expected string) bool {
+	return actual == expected
 }
