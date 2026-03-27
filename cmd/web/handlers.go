@@ -5,32 +5,38 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
 	"snippetbox.project.sope/internal/models"
 	"snippetbox.project.sope/internal/validator"
-	
 )
 
 type snippetcreateForm struct {
-	Title string `form:"title"`
-	Content string `form:"content"`
-	Expires int `form:"expires"`
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
 	validator.Validator `form:"-"`
 }
 
 type userSignupForm struct {
-	Name string `form:"name"`
-	Email string `form:"email"`
-	Password string `form:"password"`
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
 	validator.Validator `form:"-"`
 }
 
 type userLoginForm struct {
-	Email string `form:"email"`
-	Password string `form:"password"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
+type changePasswordForm struct {
+	Password            string `form:"password"`
+	NewPassword         string `form:"newPassword"`
+	ConfirmNewPassword  string `form:"confirmNewPassword"`
 	validator.Validator `form:"-"`
 }
 
-func ping(w http.ResponseWriter, r *http.Request){
+func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -48,21 +54,21 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *application) snippetView(w http.ResponseWriter, r *http.Request){
-	id, err:= strconv.Atoi(r.PathValue("id"))
-	if err != nil || id < 1{
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 {
 		http.NotFound(w, r)
 		return
 	}
 
 	snippet, err := app.snippets.Get(id)
 	if err != nil {
-		if errors.Is(err, models.ErrNoRecord){
+		if errors.Is(err, models.ErrNoRecord) {
 			http.NotFound(w, r)
 		} else {
 			app.serverError(w, r, err)
 		}
-		return 
+		return
 	}
 
 	data := app.newTemplateData(r)
@@ -71,15 +77,14 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request){
 	app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
-func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request){
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	data.Form = snippetcreateForm{}
 	app.render(w, r, http.StatusOK, "create.tmpl", data)
 
 }
 
-
-func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request){
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 
 	var form snippetcreateForm
 
@@ -92,7 +97,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	form.CheckField(validator.NotBlank(form.Title), "Title", "Field cannot be empty!")
 	form.CheckField(validator.MaxChar(form.Title, 100), "Title", "Value characters cannot exceed 100!")
 	form.CheckField(validator.NotBlank(form.Content), "Content", "Field cannot be empty!")
-	form.CheckField(validator.PermittedValue(form.Expires, 1,7, 365), "Expires", "Invalid value, expiry date value has to be 1, 7 or 365")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "Expires", "Invalid value, expiry date value has to be 1, 7 or 365")
 
 	if !form.Valid() {
 		data := app.newTemplateData(r)
@@ -102,7 +107,7 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	}
 
 	id, err := app.snippets.Insert(form.Title, form.Content, form.Expires)
-	if err != nil{
+	if err != nil {
 		app.serverError(w, r, err)
 		return
 	}
@@ -113,18 +118,18 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 }
 
-func (app *application) userSignup(w http.ResponseWriter, r *http.Request){
-			data := app.newTemplateData(r)
-			data.Form = userSignupForm{}
-			app.render(w, r, http.StatusOK, "signup.tmpl", data)
+func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = userSignupForm{}
+	app.render(w, r, http.StatusOK, "signup.tmpl", data)
 }
 
-func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
+func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 
 	var form userSignupForm
 
 	err := app.decodePostForm(r, &form)
-	if err != nil{
+	if err != nil {
 		app.clientError(w, r, http.StatusBadRequest)
 		return
 	}
@@ -135,7 +140,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
 	form.CheckField(validator.NotBlank(form.Password), "Password", "Field cannot be empty!")
 	form.CheckField(validator.MinChars(form.Password, 8), "Password", "Password must be 8 characters long!")
 
-	if !form.Valid(){
+	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
 		app.render(w, r, http.StatusUnprocessableEntity, "signup.tmpl", data)
@@ -145,7 +150,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
 	err = app.users.Insert(form.Name, form.Email, form.Password)
 	if err != nil {
 
-		if errors.Is(err, models.ErrDuplicateEmail){
+		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.AddField("Email", "This email is already in use!")
 
 			data := app.newTemplateData(r)
@@ -163,23 +168,20 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request){
 	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
+func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 
-
-func (app *application) userLogin(w http.ResponseWriter, r *http.Request){
-	
 	data := app.newTemplateData(r)
 	data.Form = userLoginForm{}
 
 	app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl", data)
 }
 
+func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 
-func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
-	
 	var form userLoginForm
 
 	err := app.decodePostForm(r, &form)
-	if err != nil{
+	if err != nil {
 		app.clientError(w, r, http.StatusBadRequest)
 		return
 	}
@@ -198,7 +200,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
 
 	id, err := app.users.Authenticate(form.Email, form.Password)
 	if err != nil {
-		if errors.Is(err, models.ErrInvalidCredentials){
+		if errors.Is(err, models.ErrInvalidCredentials) {
 			form.AddNonField("Email or Password is incorrect!")
 			data := app.newTemplateData(r)
 			data.Form = form
@@ -221,10 +223,10 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
 		app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 		app.sessionManager.Put(r.Context(), "flash", "Your login was successful!")
 
-		http.Redirect(w, r, path , http.StatusSeeOther)
+		http.Redirect(w, r, path, http.StatusSeeOther)
 		return
 	}
-	
+
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 	app.sessionManager.Put(r.Context(), "flash", "Your login was successful!")
 
@@ -232,8 +234,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request){
 
 }
 
+func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request) {
 
-func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request){
 	err := app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, r, err)
@@ -241,26 +243,25 @@ func (app *application) userLogoutPost(w http.ResponseWriter, r *http.Request){
 	}
 
 	app.sessionManager.Remove(r.Context(), "authenticatedUserID")
-
 	app.sessionManager.Put(r.Context(), "flash", "You've been logged out successfully!")
-
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+
 }
 
-func (app *application) about(w http.ResponseWriter, r *http.Request){
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
 	data := app.newTemplateData(r)
 	app.render(w, r, http.StatusUnprocessableEntity, "about.tmpl", data)
 }
 
-func (app *application) accountView(w http.ResponseWriter, r *http.Request){
+func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 
 	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
 
 	user, err := app.users.Get(id)
-	if err != nil{
-		if errors.Is(err, models.ErrNoRecord){
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
-		} else{
+		} else {
 			app.serverError(w, r, err)
 		}
 		return
@@ -272,10 +273,52 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request){
 
 }
 
-func (app *application) accountPasswordUpdate(w http.ResponseWriter, r *http.Request){
+func (app *application) accountPasswordUpdate(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	data.Form = changePasswordForm{}
+	app.render(w, r, http.StatusOK, "password.tmpl", data)
 
 }
 
-func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http.Request){
+func (app *application) accountPasswordUpdatePost(w http.ResponseWriter, r *http.Request) {
+	var form changePasswordForm
 
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, r, http.StatusBadRequest)
+		return
+	}
+
+	form.CheckField(validator.NotBlank(form.Password), "password", "Field cannot be empty!")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "Password must be 8 characters long!")
+	form.CheckField(validator.NotBlank(form.NewPassword), "newPassword", "Field cannot be empty!")
+	form.CheckField(validator.MinChars(form.NewPassword, 8), "newPassword", "Password must be 8 characters long!")
+	form.CheckField(validator.NotBlank(form.ConfirmNewPassword), "confirmNewPassword", "Field cannot be empty!")
+	form.CheckField(validator.MinChars(form.ConfirmNewPassword, 8), "confirmNewPassword", "Password must be 8 characters long!")
+	form.CheckField(validator.MatchOthers(form.NewPassword, form.ConfirmNewPassword), "confirmNewPassword", "Password do not match!")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "password.tmpl", data)
+		return
+	}
+
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	err = app.users.PasswordUpdate(id, form.Password, form.NewPassword)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddField("password", "Password is incorrect!")
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "password.tmpl", data)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.sessionManager.Put(r.Context(), "flash", "You've successfully changed the password!")
+	http.Redirect(w, r, "/account/view", http.StatusSeeOther)
 }
